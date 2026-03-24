@@ -1,0 +1,29 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "common-tools"
+version = "0.1.0"
+description = "Internal utility library"
+requires-python = ">=3.14"
+readme = "README.md"
+license = { text = "Proprietary" }
+
+dependencies = [
+    "asyncpg>=0.31.0",
+    "loguru>=0.7.3",
+    "sqlalchemy>=2.0.48",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0",
+    "pytest-cov",
+]
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/common_tools"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

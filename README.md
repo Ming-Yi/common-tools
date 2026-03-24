@@ -7,13 +7,13 @@ Internal utility library. Requires Python 3.14+.
 From internal git server:
 
 ```bash
-pip install git+http://your-git-server/common-tools.git
+pip install git+https://github.com/Ming-Yi/common-tools.git
 ```
 
 Install a specific version/tag:
 
 ```bash
-pip install git+http://your-git-server/common-tools.git@v0.1.0
+pip install git+https://github.com/Ming-Yi/common-tools.git
 ```
 
 ## Modules

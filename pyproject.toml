@@ -6,7 +6,7 @@ build-backend = "hatchling.build"
 name = "common-tools"
 version = "0.1.0"
 description = "Internal utility library"
-requires-python = ">=3.14"
+requires-python = ">=3.12"
 readme = "README.md"
 license = { text = "Proprietary" }
 

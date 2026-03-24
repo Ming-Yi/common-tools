@@ -1,7 +1,6 @@
 # common-tools
 
-Internal utility library. Requires Python 3.14+.
-
+Internal utility library. Requires Python 3.12+
 ## Installation
 
 From internal git server:

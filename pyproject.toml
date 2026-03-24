@@ -16,14 +16,5 @@ dependencies = [
     "sqlalchemy>=2.0.48",
 ]
 
-[project.optional-dependencies]
-dev = [
-    "pytest>=8.0",
-    "pytest-cov",
-]
-
 [tool.hatch.build.targets.wheel]
 packages = ["src/common_tools"]
-
-[tool.pytest.ini_options]
-testpaths = ["tests"]

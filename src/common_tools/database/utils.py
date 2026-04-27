@@ -9,12 +9,16 @@ from .engine import AsyncDatabase, Database
 
 def _import_models(models_dir: str) -> None:
     """動態載入資料夾下所有 .py 檔，確保繼承 Base 的 Model 都被註冊。"""
+    already_loaded = {
+        getattr(m, "__file__", None)
+        for m in sys.modules.values()
+    }
     for path in Path(models_dir).glob("*.py"):
         if path.stem.startswith("_"):
             continue
-        module_name = f"_common_tools_models_{path.stem}"
-        if module_name in sys.modules:
+        if str(path.resolve()) in already_loaded:
             continue
+        module_name = f"_common_tools_models_{path.stem}"
         spec = importlib.util.spec_from_file_location(module_name, path)
         module = importlib.util.module_from_spec(spec)
         sys.modules[module_name] = module

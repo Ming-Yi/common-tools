@@ -1,4 +1,5 @@
 import importlib.util
+import sys
 from contextlib import asynccontextmanager, contextmanager
 from pathlib import Path
 
@@ -11,8 +12,12 @@ def _import_models(models_dir: str) -> None:
     for path in Path(models_dir).glob("*.py"):
         if path.stem.startswith("_"):
             continue
-        spec = importlib.util.spec_from_file_location(path.stem, path)
+        module_name = f"_common_tools_models_{path.stem}"
+        if module_name in sys.modules:
+            continue
+        spec = importlib.util.spec_from_file_location(module_name, path)
         module = importlib.util.module_from_spec(spec)
+        sys.modules[module_name] = module
         spec.loader.exec_module(module)
 
 

@@ -13,7 +13,7 @@ license = { text = "Proprietary" }
 dependencies = [
     "asyncpg>=0.31.0",
     "loguru>=0.7.3",
-    "sqlalchemy>=2.0.48",
+    "sqlalchemy[asyncio]>=2.0.48",
 ]
 
 [tool.hatch.build.targets.wheel]

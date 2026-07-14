@@ -1,3 +1,10 @@
+__all__ = [
+    "DatabaseConnectionError",
+    "DatabaseError",
+    "DatabaseNotStartedError",
+]
+
+
 class DatabaseError(Exception):
     """Base class for database module failures."""
 

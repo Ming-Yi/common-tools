@@ -1,3 +1,11 @@
+__all__ = [
+    "LockAcquisitionTimeout",
+    "LockBackendUnavailable",
+    "LockError",
+    "LockLostError",
+]
+
+
 class LockError(Exception):
     """Base class for Redis lock failures."""
 

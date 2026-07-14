@@ -12,6 +12,8 @@ from redis.exceptions import RedisError
 
 from .exceptions import LockAcquisitionTimeout, LockBackendUnavailable, LockLostError
 
+__all__ = ["RedisLockManager"]
+
 logger = logging.getLogger(__name__)
 
 _RELEASE_SCRIPT = """

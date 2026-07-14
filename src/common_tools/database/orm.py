@@ -4,6 +4,8 @@ from typing import Any, ClassVar, cast
 from sqlalchemy import inspect
 from sqlalchemy.orm import Mapper
 
+__all__ = ["NAMING_CONVENTION", "ReprMixin"]
+
 NAMING_CONVENTION: dict[str, str] = {
     "ix": "ix_%(column_0_label)s",
     "uq": "uq_%(table_name)s_%(column_0_name)s",

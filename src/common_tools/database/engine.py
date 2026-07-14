@@ -14,6 +14,8 @@ from sqlalchemy.ext.asyncio import (
 from .config import PostgresConfig
 from .exceptions import DatabaseConnectionError, DatabaseNotStartedError
 
+__all__ = ["AsyncDatabase"]
+
 
 class AsyncDatabase:
     """Owns one async PostgreSQL engine and its session lifecycle."""

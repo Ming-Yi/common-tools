@@ -2,6 +2,8 @@ from dataclasses import dataclass, field
 
 from sqlalchemy.engine import make_url
 
+__all__ = ["PostgresConfig"]
+
 
 @dataclass(frozen=True, slots=True)
 class PostgresConfig:

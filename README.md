@@ -1,16 +1,84 @@
 # common-tools
 
-Internal Python 3.12+ infrastructure primitives for async PostgreSQL and Redis coordination.
+Internal Python 3.12+ infrastructure primitives for application logging, async PostgreSQL, and
+Redis coordination.
 
 ## Installation
 
 Production services must install an immutable Git tag instead of following `main`:
 
 ```bash
-pip install "common-tools[postgres] @ git+ssh://git@github.com/Ming-Yi/common-tools.git@v0.2.0"
-pip install "common-tools[redis] @ git+ssh://git@github.com/Ming-Yi/common-tools.git@v0.2.0"
-pip install "common-tools[all] @ git+ssh://git@github.com/Ming-Yi/common-tools.git@v0.2.0"
+pip install "common-tools[postgres] @ git+ssh://git@github.com/Ming-Yi/common-tools.git@v0.2.1"
+pip install "common-tools[redis] @ git+ssh://git@github.com/Ming-Yi/common-tools.git@v0.2.1"
+pip install "common-tools[logging] @ git+ssh://git@github.com/Ming-Yi/common-tools.git@v0.2.1"
+pip install "common-tools[all] @ git+ssh://git@github.com/Ming-Yi/common-tools.git@v0.2.1"
 ```
+
+## Application logging
+
+Install the `logging` extra, then configure standard-library logging once near the beginning of
+the application entry point. Logger objects created before configuration will use the new handlers
+for records emitted afterward; records emitted before configuration are not retained.
+
+```python
+import logging
+
+from common_tools.logging import configure_logging
+
+configure_logging(
+    filename="billing-api",
+    log_dir="logs",
+    retention_days=30,
+    max_file_size_mb=100,
+)
+
+logger = logging.getLogger(__name__)
+logger.info("payment completed")
+```
+
+The default configuration writes the same fixed text format to a UTF-8 file and to `stderr`.
+Interactive terminals receive ANSI colors; redirected console output and files never do. Timestamps,
+daily rotation, archive dates, and retention use `Asia/Taipei` unless another IANA timezone is
+configured.
+
+```text
+2026-07-15T14:32:08.481+08:00 INFO [billing.payment] [pid=1842 thread=MainThread] service.py:42 payment completed
+```
+
+The active file keeps a stable name across restarts and processes. Rotation is lazy: the first log
+record after midnight performs the daily rollover. Setting `max_file_size_mb` additionally rolls
+over when the active file reaches the configured soft limit.
+
+```text
+logs/billing-api.log
+logs/billing-api.2026-07-15.001.log
+logs/billing-api.2026-07-15.002.log
+```
+
+All processes on one host may write the same active file. The handler uses a process lock for both
+writes and rotation, and reinitializes its resources after `fork()`. Shared network filesystems and
+multiple hosts are outside the supported reliability boundary; use console collection for those
+deployments.
+
+Explicit arguments override environment variables:
+
+| Argument | Environment variable | Default |
+|---|---|---|
+| `filename` | `LOG_FILENAME` | `app` |
+| `log_dir` | `LOG_DIR` | `./logs` |
+| `level` | `LOG_LEVEL` | `INFO` |
+| `retention_days` | `LOG_RETENTION_DAYS` | `30` |
+| `max_file_size_mb` | `LOG_MAX_FILE_SIZE_MB` | disabled |
+| `timezone` | `LOG_TIMEZONE` | `Asia/Taipei` |
+| `compression` | `LOG_COMPRESSION` | disabled |
+
+Use `None` explicitly to disable retention, size rotation, or compression even when its environment
+variable is set. Compression accepts only `"gzip"`. The log directory is created automatically;
+an invalid configuration or unwritable directory fails application startup.
+
+`configure_logging()` replaces root, Uvicorn, and Gunicorn handlers so records are not duplicated.
+Calling it again with the same effective settings is a no-op; changing settings requires an explicit
+`shutdown_logging()` first.
 
 ## Async PostgreSQL
 

@@ -5,7 +5,7 @@ build-backend = "hatchling.build"
 [project]
 name = "common-tools"
 dynamic = ["version"]
-description = "Async PostgreSQL and Redis infrastructure primitives for internal services"
+description = "Logging, async PostgreSQL, and Redis infrastructure primitives for internal services"
 requires-python = ">=3.12"
 readme = "README.md"
 license = { text = "Proprietary" }
@@ -19,8 +19,12 @@ postgres = [
 redis = [
     "redis>=8,<9",
 ]
+logging = [
+    "concurrent-log-handler>=0.9.29,<1",
+]
 all = [
     "asyncpg>=0.31,<1",
+    "concurrent-log-handler>=0.9.29,<1",
     "redis>=8,<9",
     "sqlalchemy[asyncio]>=2.0.48,<3",
 ]

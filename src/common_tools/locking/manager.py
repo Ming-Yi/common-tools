@@ -47,11 +47,11 @@ class RedisLockManager:
 
     @asynccontextmanager
     async def try_acquire(
-            self,
-            key: str,
-            *,
-            ttl: float,
-            max_hold: float,
+        self,
+        key: str,
+        *,
+        ttl: float,
+        max_hold: float,
     ) -> AsyncGenerator[bool]:
         if not key:
             raise ValueError("key must not be empty")
@@ -104,12 +104,12 @@ class RedisLockManager:
 
     @asynccontextmanager
     async def acquire(
-            self,
-            key: str,
-            *,
-            ttl: float,
-            max_hold: float,
-            wait_timeout: float,
+        self,
+        key: str,
+        *,
+        ttl: float,
+        max_hold: float,
+        wait_timeout: float,
     ) -> AsyncGenerator[None]:
         if not math.isfinite(wait_timeout) or wait_timeout <= 0:
             raise ValueError("wait_timeout must be greater than zero")
@@ -131,14 +131,14 @@ class RedisLockManager:
             retry_delay = min(retry_delay * 2, 0.5)
 
     async def _renew(
-            self,
-            key: str,
-            token: str,
-            ttl: float,
-            ttl_ms: int,
-            max_hold: float,
-            owner: asyncio.Task[object],
-            state: _LeaseState,
+        self,
+        key: str,
+        token: str,
+        ttl: float,
+        ttl_ms: int,
+        max_hold: float,
+        owner: asyncio.Task[object],
+        state: _LeaseState,
     ) -> None:
         loop = asyncio.get_running_loop()
         deadline = loop.time() + max_hold

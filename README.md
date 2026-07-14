@@ -14,6 +14,198 @@ pip install "common-tools[logging] @ git+ssh://git@github.com/Ming-Yi/common-too
 pip install "common-tools[all] @ git+ssh://git@github.com/Ming-Yi/common-tools.git@v0.2.1"
 ```
 
+## Application settings
+
+`SettingsProvider` owns one process-wide settings instance while leaving environment loading and
+validation to the application. The application can install `pydantic-settings` and define settings
+for all of its infrastructure:
+
+```python
+from pydantic import BaseModel, Field, SecretStr
+from pydantic_settings import BaseSettings, SettingsConfigDict
+
+from common_tools.settings import SettingsProvider
+
+
+class LoggingSettings(BaseModel):
+    filename: str = "billing-api"
+    log_dir: str = "logs"
+    level: str = "INFO"
+    retention_days: int | None = 30
+    max_file_size_mb: int | None = None
+    timezone: str = "Asia/Taipei"
+
+
+class PostgresSettings(BaseModel):
+    url: SecretStr
+    pool_size: int = 5
+    max_overflow: int = 10
+
+
+class RedisSettings(BaseModel):
+    url: SecretStr
+    lock_namespace: str = "billing"
+
+
+class Settings(BaseSettings):
+    model_config = SettingsConfigDict(
+        env_prefix="BILLING_",
+        env_nested_delimiter="__",
+        frozen=True,
+    )
+
+    logging: LoggingSettings = Field(default_factory=LoggingSettings)
+    postgres: PostgresSettings
+    redis: RedisSettings
+
+
+_provider = SettingsProvider(Settings)
+
+initialize_settings = _provider.initialize
+get_settings = _provider.get
+override_settings = _provider.override
+```
+
+For example, `BILLING_POSTGRES__POOL_SIZE=10` becomes
+`settings.postgres.pool_size == 10`; Pydantic performs the environment loading, conversion, and
+validation when `initialize_settings()` calls `Settings()`.
+
+Call `initialize_settings()` once in the application entry point. A second initialization raises
+`SettingsAlreadyInitializedError`; access before initialization raises
+`SettingsNotInitializedError`. The application entry point reads settings once and explicitly
+constructs each infrastructure resource:
+
+```python
+from redis.asyncio import Redis
+
+from common_tools.database import AsyncDatabase, PostgresConfig
+from common_tools.locking import RedisLockManager
+from common_tools.logging import configure_logging
+
+
+settings = initialize_settings()
+
+configure_logging(
+    filename=settings.logging.filename,
+    log_dir=settings.logging.log_dir,
+    level=settings.logging.level,
+    retention_days=settings.logging.retention_days,
+    max_file_size_mb=settings.logging.max_file_size_mb,
+    timezone=settings.logging.timezone,
+)
+
+database = AsyncDatabase(
+    PostgresConfig(
+        url=settings.postgres.url.get_secret_value(),
+        pool_size=settings.postgres.pool_size,
+        max_overflow=settings.postgres.max_overflow,
+    )
+)
+
+redis = Redis.from_url(settings.redis.url.get_secret_value())
+locks = RedisLockManager(redis, namespace=settings.redis.lock_namespace)
+```
+
+`configure_logging`, `AsyncDatabase`, and `RedisLockManager` do not call `get_settings()` and do not
+depend on the application's settings schema. The application passes each component only the narrow
+configuration or resource it needs.
+
+Tests can use `with override_settings(test_settings): ...`. Overrides are context-local, nest
+correctly, and remain isolated between concurrent async tasks. `common-tools` does not depend on
+Pydantic; any zero-argument settings factory can be used.
+
+### FastAPI initialization and usage
+
+FastAPI recommends its
+[`lifespan` parameter](https://fastapi.tiangolo.com/advanced/events/) for application startup and
+shutdown. Initialize settings and long-lived infrastructure there, store resources on `app.state`,
+and expose those resources to request handlers through FastAPI dependencies:
+
+```python
+from collections.abc import AsyncGenerator
+from contextlib import asynccontextmanager
+from typing import Annotated
+
+from fastapi import Depends, FastAPI, Request
+from redis.asyncio import Redis
+
+from common_tools.database import AsyncDatabase, PostgresConfig
+from common_tools.locking import RedisLockManager
+from common_tools.logging import configure_logging, shutdown_logging
+
+from .config import Settings, get_settings, initialize_settings
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI) -> AsyncGenerator[None]:
+    settings = initialize_settings()
+    configure_logging(
+        filename=settings.logging.filename,
+        log_dir=settings.logging.log_dir,
+        level=settings.logging.level,
+        retention_days=settings.logging.retention_days,
+        max_file_size_mb=settings.logging.max_file_size_mb,
+        timezone=settings.logging.timezone,
+    )
+
+    database = AsyncDatabase(
+        PostgresConfig(
+            url=settings.postgres.url.get_secret_value(),
+            pool_size=settings.postgres.pool_size,
+            max_overflow=settings.postgres.max_overflow,
+        )
+    )
+    redis = Redis.from_url(settings.redis.url.get_secret_value())
+
+    try:
+        await database.start()
+        await redis.ping()
+        app.state.database = database
+        app.state.locks = RedisLockManager(redis, namespace=settings.redis.lock_namespace)
+        yield
+    finally:
+        await redis.aclose()
+        await database.close()
+        shutdown_logging()
+
+
+app = FastAPI(lifespan=lifespan)
+```
+
+Keep access to `app.state` behind typed dependency functions. Application-specific settings may use
+`get_settings()` directly because request handling starts only after lifespan initialization:
+
+```python
+def get_database(request: Request) -> AsyncDatabase:
+    return request.app.state.database
+
+
+def get_locks(request: Request) -> RedisLockManager:
+    return request.app.state.locks
+
+
+DatabaseDep = Annotated[AsyncDatabase, Depends(get_database)]
+LocksDep = Annotated[RedisLockManager, Depends(get_locks)]
+SettingsDep = Annotated[Settings, Depends(get_settings)]
+
+
+@app.get("/runtime")
+async def runtime_info(
+    database: DatabaseDep,
+    locks: LocksDep,
+    settings: SettingsDep,
+) -> dict[str, object]:
+    return {
+        "database_started": database.started,
+        "lock_manager_ready": locks is not None,
+        "log_level": settings.logging.level,
+    }
+```
+
+Do not create these resources at module import time or call `initialize_settings()` in each
+dependency. For tests that must run lifespan startup and shutdown, use `TestClient(app)` as a
+context manager.
+
 ## Application logging
 
 Install the `logging` extra, then configure standard-library logging once near the beginning of

@@ -233,15 +233,15 @@ _fork_registered = False
 
 
 def configure_logging(
-    filename: str | None = None,
-    log_dir: str | os.PathLike[str] | None = None,
-    *,
-    level: str | int | None = None,
-    retention_days: int | None = _UNSET,  # pyright: ignore[reportArgumentType]
-    max_file_size_mb: int | None = _UNSET,  # pyright: ignore[reportArgumentType]
-    timezone: str | None = None,
-    console: bool = True,
-    compression: Literal["gzip"] | None = _UNSET,  # pyright: ignore[reportArgumentType]
+        filename: str | None = None,
+        log_dir: str | os.PathLike[str] | None = None,
+        *,
+        level: str | int | None = None,
+        retention_days: int | None = _UNSET,  # pyright: ignore[reportArgumentType]
+        max_file_size_mb: int | None = _UNSET,  # pyright: ignore[reportArgumentType]
+        timezone: str | None = None,
+        console: bool = True,
+        compression: Literal["gzip"] | None = _UNSET,  # pyright: ignore[reportArgumentType]
 ) -> logging.Logger:
     """Configure process-wide console and process-safe rotating file logging.
 
@@ -301,15 +301,15 @@ def shutdown_logging() -> None:
 
 
 def _resolve_config(
-    *,
-    filename: str | None,
-    log_dir: str | os.PathLike[str] | None,
-    level: str | int | None,
-    retention_days: int | None | _UnsetType,
-    max_file_size_mb: int | None | _UnsetType,
-    timezone: str | None,
-    console: bool,
-    compression: Literal["gzip"] | None | _UnsetType,
+        *,
+        filename: str | None,
+        log_dir: str | os.PathLike[str] | None,
+        level: str | int | None,
+        retention_days: int | None | _UnsetType,
+        max_file_size_mb: int | None | _UnsetType,
+        timezone: str | None,
+        console: bool,
+        compression: Literal["gzip"] | None | _UnsetType,
 ) -> _LoggingConfig:
     resolved_filename = filename if filename is not None else os.getenv("LOG_FILENAME", "app")
     _validate_filename(resolved_filename)
@@ -366,11 +366,11 @@ def _resolve_level(value: str | int) -> int:
 
 
 def _resolve_optional_positive_int(
-    value: int | None | _UnsetType,
-    *,
-    environment: str,
-    default: int | None,
-    field: str,
+        value: int | None | _UnsetType,
+        *,
+        environment: str,
+        default: int | None,
+        field: str,
 ) -> int | None:
     resolved: int | None
     if isinstance(value, _UnsetType):
@@ -393,7 +393,7 @@ def _resolve_optional_positive_int(
 
 
 def _resolve_compression(
-    value: Literal["gzip"] | None | _UnsetType,
+        value: Literal["gzip"] | None | _UnsetType,
 ) -> Literal["gzip"] | None:
     resolved = os.getenv("LOG_COMPRESSION") if isinstance(value, _UnsetType) else value
 
@@ -408,15 +408,15 @@ def _resolve_compression(
 
 def _validate_filename(filename: str) -> None:
     if (
-        not filename
-        or not filename.strip()
-        or filename != filename.strip()
-        or filename in {".", ".."}
-        or "/" in filename
-        or "\\" in filename
-        or "\x00" in filename
-        or filename.lower().endswith(".log")
-        or any(ord(character) < 32 for character in filename)
+            not filename
+            or not filename.strip()
+            or filename != filename.strip()
+            or filename in {".", ".."}
+            or "/" in filename
+            or "\\" in filename
+            or "\x00" in filename
+            or filename.lower().endswith(".log")
+            or any(ord(character) < 32 for character in filename)
     ):
         raise ValueError("filename must be a safe file stem without a path or '.log' suffix")
 

@@ -1,12 +1,5 @@
-from importlib.metadata import version
+"""Shared infrastructure primitives for internal Python services."""
 
-from .base_classes import SingletonMeta, StaticUtils
-from .logger import Logging
+from ._version import __version__
 
-__version__ = version("common-tools")
-
-__all__ = [
-    "Logging",
-    "SingletonMeta",
-    "StaticUtils",
-]
+__all__ = ["__version__"]

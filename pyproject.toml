@@ -1,20 +1,77 @@
 [build-system]
-requires = ["hatchling"]
+requires = ["hatchling>=1.27", "hatch-vcs>=0.5"]
 build-backend = "hatchling.build"
 
 [project]
 name = "common-tools"
-version = "0.1.0"
-description = "Internal utility library"
+dynamic = ["version"]
+description = "Async PostgreSQL and Redis infrastructure primitives for internal services"
 requires-python = ">=3.12"
 readme = "README.md"
 license = { text = "Proprietary" }
+dependencies = []
 
-dependencies = [
-    "asyncpg>=0.31.0",
-    "loguru>=0.7.3",
-    "sqlalchemy[asyncio]>=2.0.48",
+[project.optional-dependencies]
+postgres = [
+    "asyncpg>=0.31,<1",
+    "sqlalchemy[asyncio]>=2.0.48,<3",
 ]
+redis = [
+    "redis>=8,<9",
+]
+all = [
+    "asyncpg>=0.31,<1",
+    "redis>=8,<9",
+    "sqlalchemy[asyncio]>=2.0.48,<3",
+]
+
+[dependency-groups]
+dev = [
+    "alembic>=1.18,<2",
+    "asyncpg>=0.31,<1",
+    "pyright>=1.1.390",
+    "pytest>=8.3",
+    "pytest-asyncio>=0.24",
+    "pytest-cov>=6",
+    "redis>=8,<9",
+    "ruff>=0.9",
+    "sqlalchemy[asyncio]>=2.0.48,<3",
+    "testcontainers[postgres,redis]>=4.10",
+]
+
+[tool.hatch.version]
+source = "vcs"
+
+[tool.hatch.build.hooks.vcs]
+version-file = "src/common_tools/_version.py"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/common_tools"]
+
+[tool.pytest.ini_options]
+addopts = "-ra --strict-config --strict-markers"
+asyncio_mode = "auto"
+testpaths = ["tests"]
+markers = [
+    "integration: requires Docker and real infrastructure",
+]
+
+[tool.coverage.run]
+branch = true
+source = ["common_tools"]
+
+[tool.coverage.report]
+show_missing = true
+skip_covered = true
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "SIM", "RUF", "ASYNC"]
+
+[tool.pyright]
+include = ["src"]
+pythonVersion = "3.12"
+typeCheckingMode = "strict"

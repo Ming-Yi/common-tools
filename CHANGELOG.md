@@ -11,6 +11,18 @@
 - Stop setting and verifying the PostgreSQL session timezone during startup; applications now own
   UTC value handling.
 
+## v0.2.3 - 2026-07-15
+
+- Declare explicit `__all__` public exports in the database and locking source modules and cover
+  them with module-export tests.
+
+## v0.2.2 - 2026-07-15
+
+- Add `common_tools.settings.SettingsProvider` for a process-wide settings instance with
+  context-local test overrides, independent of any settings library.
+- Document application settings ownership and FastAPI lifespan, `app.state`, and dependency
+  integration in the README.
+
 ## v0.2.1 - 2026-07-15
 
 - Add explicit standard-library logging configuration with colored console output and a fixed

@@ -3,6 +3,10 @@
 Alembic configuration and revision files belong to each consuming service because that service
 owns its models and `AppBase.metadata`.
 
+When one service uses PostgreSQL and SQL Server, give each database a separate declarative base,
+Alembic configuration, and revision directory. Do not autogenerate one migration history against
+both dialects.
+
 ## Bootstrap a service
 
 Install Alembic in the service's development dependencies and create its async environment:
@@ -49,3 +53,37 @@ to detect model changes without a revision.
 Run `alembic upgrade head` as a dedicated deployment step before starting the new application
 version. Do not let every application replica migrate on startup. For database-per-tenant systems,
 the consuming service owns the bounded migration orchestration and tenant database discovery.
+
+## Two database histories
+
+A dual-database service can keep two configurations:
+
+```text
+alembic.postgres.ini
+alembic.sqlserver.ini
+migrations/
+  postgres/
+    env.py
+    versions/
+  sqlserver/
+    env.py
+    versions/
+```
+
+Each `env.py` imports only that database's models, assigns its own base metadata to
+`target_metadata`, and reads the matching URL. Keep the generated async migration runner for both
+`postgresql+asyncpg` and `mssql+aioodbc` URLs.
+
+Run and deploy the histories independently:
+
+```bash
+alembic -c alembic.postgres.ini revision --autogenerate -m "change primary schema"
+alembic -c alembic.sqlserver.ini revision --autogenerate -m "change ERP schema"
+
+alembic -c alembic.postgres.ini upgrade head
+alembic -c alembic.sqlserver.ini upgrade head
+```
+
+Review generated DDL separately for identity columns, server defaults, datetime types, indexes,
+and constraint behavior. A successful revision on one dialect does not imply compatibility with
+the other.

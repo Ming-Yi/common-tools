@@ -14,4 +14,4 @@ class DatabaseNotStartedError(DatabaseError):
 
 
 class DatabaseConnectionError(DatabaseError):
-    """Raised when PostgreSQL startup or a health check fails."""
+    """Raised when database startup or a health check fails."""

@@ -54,6 +54,13 @@ jobs:
           version: "0.11.16"
           python-version: "3.12"
           enable-cache: true
+      - name: Install Microsoft ODBC Driver 18
+        run: |
+          curl -sSL -O "https://packages.microsoft.com/config/ubuntu/$(lsb_release -rs)/packages-microsoft-prod.deb"
+          sudo dpkg -i packages-microsoft-prod.deb
+          rm packages-microsoft-prod.deb
+          sudo apt-get update
+          sudo ACCEPT_EULA=Y apt-get install -y msodbcsql18
       - run: uv sync --all-extras --frozen
       - run: uv run pytest -m integration
 
@@ -68,4 +75,4 @@ jobs:
         with:
           version: "0.11.16"
           python-version: "3.12"
-      - run: uv build --frozen
+      - run: uv build

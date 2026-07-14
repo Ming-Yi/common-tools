@@ -1,17 +1,18 @@
 # common-tools
 
-Internal Python 3.12+ infrastructure primitives for application logging, async PostgreSQL, and
-Redis coordination.
+Internal Python 3.12+ infrastructure primitives for application logging, async PostgreSQL and SQL
+Server access, and Redis coordination.
 
 ## Installation
 
 Production services must install an immutable Git tag instead of following `main`:
 
 ```bash
-pip install "common-tools[postgres] @ git+ssh://git@github.com/Ming-Yi/common-tools.git@v0.2.1"
-pip install "common-tools[redis] @ git+ssh://git@github.com/Ming-Yi/common-tools.git@v0.2.1"
-pip install "common-tools[logging] @ git+ssh://git@github.com/Ming-Yi/common-tools.git@v0.2.1"
-pip install "common-tools[all] @ git+ssh://git@github.com/Ming-Yi/common-tools.git@v0.2.1"
+pip install "common-tools[postgres] @ git+ssh://git@github.com/Ming-Yi/common-tools.git@v0.3.0"
+pip install "common-tools[sqlserver] @ git+ssh://git@github.com/Ming-Yi/common-tools.git@v0.3.0"
+pip install "common-tools[redis] @ git+ssh://git@github.com/Ming-Yi/common-tools.git@v0.3.0"
+pip install "common-tools[logging] @ git+ssh://git@github.com/Ming-Yi/common-tools.git@v0.3.0"
+pip install "common-tools[all] @ git+ssh://git@github.com/Ming-Yi/common-tools.git@v0.3.0"
 ```
 
 ## Application settings
@@ -272,10 +273,11 @@ an invalid configuration or unwritable directory fails application startup.
 Calling it again with the same effective settings is a no-op; changing settings requires an explicit
 `shutdown_logging()` first.
 
-## Async PostgreSQL
+## Async PostgreSQL and SQL Server
 
 Each `AsyncDatabase` owns exactly one SQLAlchemy engine. Create one instance per database,
-start it at application startup, and close it at shutdown. Every pooled connection uses UTC.
+start it at application startup, and close it at shutdown. The package does not change database
+session timezones; applications must write explicit UTC values when UTC storage is required.
 
 ```python
 from common_tools.database import AsyncDatabase, PostgresConfig
@@ -300,11 +302,34 @@ async with database:
 
 Framework applications can call `await database.start()` and the idempotent
 `await database.close()` from their lifespan hooks. The package does not keep a global database
-instance or perform tenant routing.
+instance, perform tenant routing, retry in the background, or coordinate cross-database
+transactions. `await database.check_connection()` runs `SELECT 1` for a started instance.
+
+SQL Server 2019 and later use a separate config and the `mssql+aioodbc` dialect:
+
+```python
+from common_tools.database import AsyncDatabase, SqlServerConfig
+
+erp_database = AsyncDatabase(
+    SqlServerConfig(
+        url=(
+            "mssql+aioodbc://user:password@sql-server:1433/erp"
+            "?driver=ODBC+Driver+18+for+SQL+Server"
+            "&Encrypt=yes&TrustServerCertificate=no"
+        )
+    )
+)
+```
+
+`SqlServerConfig` supports DSN-less SQL Server authentication URLs and requires Microsoft ODBC
+Driver 18. Install the system driver in the application image in addition to the `sqlserver`
+Python extra. See [SQL Server and dual-database FastAPI usage](docs/sql-server.md) for Docker,
+degraded startup, retry, health-check, and CI examples.
 
 ### Application-owned ORM metadata
 
-Each consuming service owns its declarative base and Alembic history. `common-tools` only provides
+Each consuming service owns its declarative base and Alembic history. Applications using two
+databases should define separate model bases and migration histories. `common-tools` only provides
 an optional repr mixin and stable constraint names:
 
 ```python

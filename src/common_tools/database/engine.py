@@ -11,16 +11,16 @@ from sqlalchemy.ext.asyncio import (
     create_async_engine,
 )
 
-from .config import PostgresConfig
+from .config import PostgresConfig, SqlServerConfig
 from .exceptions import DatabaseConnectionError, DatabaseNotStartedError
 
 __all__ = ["AsyncDatabase"]
 
 
 class AsyncDatabase:
-    """Owns one async PostgreSQL engine and its session lifecycle."""
+    """Owns one async database engine and its session lifecycle."""
 
-    def __init__(self, config: PostgresConfig) -> None:
+    def __init__(self, config: PostgresConfig | SqlServerConfig) -> None:
         self.config = config
         self._engine: AsyncEngine | None = None
         self._session_factory: async_sessionmaker[AsyncSession] | None = None
@@ -33,28 +33,44 @@ class AsyncDatabase:
         if self.started:
             return self
 
-        engine = create_async_engine(
-            self.config.url,
-            pool_size=self.config.pool_size,
-            max_overflow=self.config.max_overflow,
-            pool_timeout=self.config.pool_timeout,
-            pool_recycle=self.config.pool_recycle,
-            pool_pre_ping=self.config.pool_pre_ping,
-            connect_args={"server_settings": {"timezone": "UTC"}},
-        )
+        engine: AsyncEngine | None = None
         try:
+            engine = create_async_engine(
+                self.config.url,
+                pool_size=self.config.pool_size,
+                max_overflow=self.config.max_overflow,
+                pool_timeout=self.config.pool_timeout,
+                pool_recycle=self.config.pool_recycle,
+                pool_pre_ping=self.config.pool_pre_ping,
+            )
             async with engine.connect() as connection:
                 await connection.execute(text("SELECT 1"))
-                timezone = await connection.scalar(text("SHOW timezone"))
-                if timezone != "UTC":
-                    raise RuntimeError("PostgreSQL connection timezone is not UTC")
         except Exception as error:
-            await engine.dispose()
-            raise DatabaseConnectionError("PostgreSQL connection unavailable") from error
+            if engine is not None:
+                await engine.dispose()
+            raise DatabaseConnectionError(f"{self._backend_name} connection unavailable") from error
 
         self._engine = engine
         self._session_factory = async_sessionmaker(engine, expire_on_commit=False)
         return self
+
+    @property
+    def _backend_name(self) -> str:
+        if isinstance(self.config, PostgresConfig):
+            return "PostgreSQL"
+        return "SQL Server"
+
+    async def check_connection(self) -> None:
+        """Verify that a started database can currently serve a connection."""
+        engine = self._engine
+        if engine is None:
+            raise DatabaseNotStartedError("database is not started")
+
+        try:
+            async with engine.connect() as connection:
+                await connection.execute(text("SELECT 1"))
+        except Exception as error:
+            raise DatabaseConnectionError(f"{self._backend_name} connection unavailable") from error
 
     async def close(self) -> None:
         engine = self._engine

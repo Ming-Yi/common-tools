@@ -1,6 +1,8 @@
 from collections.abc import Iterator
 
 import pytest
+from sqlalchemy.engine import make_url
+from testcontainers.mssql import SqlServerContainer
 from testcontainers.postgres import PostgresContainer
 
 
@@ -8,6 +10,22 @@ from testcontainers.postgres import PostgresContainer
 def postgres_url() -> Iterator[str]:
     with PostgresContainer("postgres:17-alpine", driver="asyncpg") as postgres:
         yield postgres.get_connection_url()
+
+
+@pytest.fixture(scope="session")
+def sql_server_url() -> Iterator[str]:
+    with SqlServerContainer(
+        "mcr.microsoft.com/mssql/server:2019-latest",
+        dialect="mssql+aioodbc",
+    ) as sql_server:
+        url = make_url(sql_server.get_connection_url()).update_query_dict(
+            {
+                "driver": "ODBC Driver 18 for SQL Server",
+                "Encrypt": "yes",
+                "TrustServerCertificate": "yes",
+            }
+        )
+        yield url.render_as_string(hide_password=False)
 
 
 @pytest.fixture

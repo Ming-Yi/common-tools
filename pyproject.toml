@@ -5,7 +5,7 @@ build-backend = "hatchling.build"
 [project]
 name = "common-tools"
 dynamic = ["version"]
-description = "Logging, async PostgreSQL, and Redis infrastructure primitives for internal services"
+description = "Logging, async database, and Redis infrastructure primitives for internal services"
 requires-python = ">=3.12"
 readme = "README.md"
 license = { text = "Proprietary" }
@@ -16,6 +16,11 @@ postgres = [
     "asyncpg>=0.31,<1",
     "sqlalchemy[asyncio]>=2.0.48,<3",
 ]
+sqlserver = [
+    "aioodbc>=0.5,<1",
+    "pyodbc>=5,<6",
+    "sqlalchemy[asyncio]>=2.0.48,<3",
+]
 redis = [
     "redis>=8,<9",
 ]
@@ -23,8 +28,10 @@ logging = [
     "concurrent-log-handler>=0.9.29,<1",
 ]
 all = [
+    "aioodbc>=0.5,<1",
     "asyncpg>=0.31,<1",
     "concurrent-log-handler>=0.9.29,<1",
+    "pyodbc>=5,<6",
     "redis>=8,<9",
     "sqlalchemy[asyncio]>=2.0.48,<3",
 ]
@@ -32,15 +39,17 @@ all = [
 [dependency-groups]
 dev = [
     "alembic>=1.18,<2",
+    "aioodbc>=0.5,<1",
     "asyncpg>=0.31,<1",
     "pyright>=1.1.390",
     "pytest>=8.3",
     "pytest-asyncio>=0.24",
     "pytest-cov>=6",
+    "pyodbc>=5,<6",
     "redis>=8,<9",
     "ruff>=0.9",
     "sqlalchemy[asyncio]>=2.0.48,<3",
-    "testcontainers[postgres,redis]>=4.10",
+    "testcontainers[mssql,postgres,redis]>=4.10",
 ]
 
 [tool.hatch.version]

@@ -1,5 +1,16 @@
 # Changelog
 
+## v0.3.0 - 2026-07-15
+
+- Add async SQL Server 2019+ support through `SqlServerConfig`, `aioodbc`, and Microsoft ODBC
+  Driver 18.
+- Add a separate `sqlserver` dependency extra and real SQL Server 2019 integration coverage.
+- Add `AsyncDatabase.check_connection()` for explicit `SELECT 1` health checks.
+- Support independent PostgreSQL and SQL Server instances in one FastAPI application without
+  cross-database transaction coordination or library-owned retry tasks.
+- Stop setting and verifying the PostgreSQL session timezone during startup; applications now own
+  UTC value handling.
+
 ## v0.2.1 - 2026-07-15
 
 - Add explicit standard-library logging configuration with colored console output and a fixed

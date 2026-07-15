@@ -4,6 +4,12 @@ from collections.abc import Callable, Generator
 from contextlib import contextmanager
 from contextvars import ContextVar
 
+__all__ = [
+    "SettingsAlreadyInitializedError",
+    "SettingsNotInitializedError",
+    "SettingsProvider",
+]
+
 
 class SettingsNotInitializedError(RuntimeError):
     """Raised when settings are requested before initialization."""
@@ -63,10 +69,3 @@ class SettingsProvider[T]:
             yield settings
         finally:
             self._override.reset(token)
-
-
-__all__ = [
-    "SettingsAlreadyInitializedError",
-    "SettingsNotInitializedError",
-    "SettingsProvider",
-]

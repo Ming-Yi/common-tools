@@ -83,10 +83,10 @@ class AsyncDatabase:
         return await self.start()
 
     async def __aexit__(
-        self,
-        exc_type: type[BaseException] | None,
-        exc_value: BaseException | None,
-        traceback: TracebackType | None,
+            self,
+            exc_type: type[BaseException] | None,
+            exc_value: BaseException | None,
+            traceback: TracebackType | None,
     ) -> None:
         await self.close()
 
@@ -96,7 +96,7 @@ class AsyncDatabase:
         if session_factory is None:
             raise DatabaseNotStartedError("database is not started")
 
-        async with session_factory() as session:
+        async with session_factory.begin() as session:
             yield session
 
     @asynccontextmanager

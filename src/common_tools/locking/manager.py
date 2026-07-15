@@ -11,24 +11,11 @@ from redis.asyncio import Redis
 from redis.exceptions import RedisError
 
 from .exceptions import LockAcquisitionTimeout, LockBackendUnavailable, LockLostError
+from .scripts import REDIS_RELEASE_LOCK_SCRIPT, REDIS_RENEW_LOCK_SCRIPT
 
 __all__ = ["RedisLockManager"]
 
 logger = logging.getLogger(__name__)
-
-_RELEASE_SCRIPT = """
-if redis.call('get', KEYS[1]) == ARGV[1] then
-    return redis.call('del', KEYS[1])
-end
-return 0
-"""
-
-_RENEW_SCRIPT = """
-if redis.call('get', KEYS[1]) == ARGV[1] then
-    return redis.call('pexpire', KEYS[1], ARGV[2])
-end
-return 0
-"""
 
 
 @dataclass(slots=True)
@@ -46,14 +33,16 @@ class RedisLockManager:
             raise ValueError("namespace must not be empty")
         self._redis = redis
         self._prefix = f"common-tools:lock:{namespace}"
+        self._release_lock = redis.register_script(REDIS_RELEASE_LOCK_SCRIPT)
+        self._renew_lock = redis.register_script(REDIS_RENEW_LOCK_SCRIPT)
 
     @asynccontextmanager
     async def try_acquire(
-        self,
-        key: str,
-        *,
-        ttl: float,
-        max_hold: float,
+            self,
+            key: str,
+            *,
+            ttl: float,
+            max_hold: float,
     ) -> AsyncGenerator[bool]:
         if not key:
             raise ValueError("key must not be empty")
@@ -97,7 +86,7 @@ class RedisLockManager:
             with suppress(asyncio.CancelledError):
                 await renewal_task
             try:
-                await self._redis.eval(_RELEASE_SCRIPT, 1, full_key, token)
+                await self._release_lock(keys=[full_key], args=[token])
             except RedisError as error:
                 if body_error is None and state.error is None:
                     message = "Redis unavailable while releasing lock"
@@ -106,12 +95,12 @@ class RedisLockManager:
 
     @asynccontextmanager
     async def acquire(
-        self,
-        key: str,
-        *,
-        ttl: float,
-        max_hold: float,
-        wait_timeout: float,
+            self,
+            key: str,
+            *,
+            ttl: float,
+            max_hold: float,
+            wait_timeout: float,
     ) -> AsyncGenerator[None]:
         if not math.isfinite(wait_timeout) or wait_timeout <= 0:
             raise ValueError("wait_timeout must be greater than zero")
@@ -133,14 +122,14 @@ class RedisLockManager:
             retry_delay = min(retry_delay * 2, 0.5)
 
     async def _renew(
-        self,
-        key: str,
-        token: str,
-        ttl: float,
-        ttl_ms: int,
-        max_hold: float,
-        owner: asyncio.Task[object],
-        state: _LeaseState,
+            self,
+            key: str,
+            token: str,
+            ttl: float,
+            ttl_ms: int,
+            max_hold: float,
+            owner: asyncio.Task[object],
+            state: _LeaseState,
     ) -> None:
         loop = asyncio.get_running_loop()
         deadline = loop.time() + max_hold
@@ -151,7 +140,7 @@ class RedisLockManager:
                 owner.cancel()
                 return
             try:
-                renewed = await self._redis.eval(_RENEW_SCRIPT, 1, key, token, ttl_ms)
+                renewed = await self._renew_lock(keys=[key], args=[token, ttl_ms])
             except RedisError as error:
                 state.error = LockLostError("Redis unavailable during lock renewal")
                 state.cause = error

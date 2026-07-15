@@ -11,3 +11,4 @@ htmlcov/
 .idea
 .python-version
 src/common_tools/_version.py
+.mcp.json

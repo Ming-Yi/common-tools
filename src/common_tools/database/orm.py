@@ -1,8 +1,7 @@
 from collections.abc import Iterator
-from typing import Any, ClassVar, cast
+from typing import Any, ClassVar
 
 from sqlalchemy import inspect
-from sqlalchemy.orm import Mapper
 
 __all__ = ["NAMING_CONVENTION", "ReprMixin"]
 
@@ -21,7 +20,7 @@ class ReprMixin:
     __repr_include__: ClassVar[tuple[str, ...] | None] = None
 
     def _repr_items(self) -> Iterator[tuple[str, Any]]:
-        mapper = cast(Mapper[Any], inspect(type(self)))
+        mapper = inspect(type(self))
         keys = [attribute.key for attribute in mapper.column_attrs]
         if self.__repr_include__ is not None:
             keys = [key for key in keys if key in self.__repr_include__]

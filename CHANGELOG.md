@@ -1,5 +1,13 @@
 # Changelog
 
+## v0.3.1 - 2026-07-18
+
+- Add a complete Traditional Chinese README and move the Alembic setup, development, deployment,
+  and dual-database guidance directly into both READMEs.
+- Split application logging into focused configuration, formatting, handler, runtime, and exception
+  modules while preserving the existing `common_tools.logging` interface.
+- Register reusable Redis Lua scripts for atomic, ownership-checked lock renewal and release.
+
 ## v0.3.0 - 2026-07-15
 
 - Add async SQL Server 2019+ support through `SqlServerConfig`, `aioodbc`, and Microsoft ODBC

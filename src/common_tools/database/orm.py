@@ -20,7 +20,7 @@ class ReprMixin:
     __repr_include__: ClassVar[tuple[str, ...] | None] = None
 
     def _repr_items(self) -> Iterator[tuple[str, Any]]:
-        mapper = inspect(type(self))
+        mapper = inspect(type(self), raiseerr=True)
         keys = [attribute.key for attribute in mapper.column_attrs]
         if self.__repr_include__ is not None:
             keys = [key for key in keys if key in self.__repr_include__]

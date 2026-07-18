@@ -10,11 +10,11 @@ PostgreSQL／SQL Server 存取，以及 Redis 協調鎖。
 正式環境應安裝不可變動的 Git tag，不要直接追蹤 `main`：
 
 ```bash
-uv add "common-tools[postgres] @ git+ssh://git@github.com/Ming-Yi/common-tools.git@v0.3.0"
-uv add "common-tools[sqlserver] @ git+ssh://git@github.com/Ming-Yi/common-tools.git@v0.3.0"
-uv add "common-tools[redis] @ git+ssh://git@github.com/Ming-Yi/common-tools.git@v0.3.0"
-uv add "common-tools[logging] @ git+ssh://git@github.com/Ming-Yi/common-tools.git@v0.3.0"
-uv add "common-tools[all] @ git+ssh://git@github.com/Ming-Yi/common-tools.git@v0.3.0"
+uv add "common-tools[postgres] @ git+ssh://git@github.com/Ming-Yi/common-tools.git@v0.3.1"
+uv add "common-tools[sqlserver] @ git+ssh://git@github.com/Ming-Yi/common-tools.git@v0.3.1"
+uv add "common-tools[redis] @ git+ssh://git@github.com/Ming-Yi/common-tools.git@v0.3.1"
+uv add "common-tools[logging] @ git+ssh://git@github.com/Ming-Yi/common-tools.git@v0.3.1"
+uv add "common-tools[all] @ git+ssh://git@github.com/Ming-Yi/common-tools.git@v0.3.1"
 ```
 
 請依服務實際需要選擇額外依賴：

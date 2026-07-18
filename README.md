@@ -10,11 +10,11 @@ Server access, and Redis coordination.
 Production services must install an immutable Git tag instead of following `main`:
 
 ```bash
-uv add "common-tools[postgres] @ git+ssh://git@github.com/Ming-Yi/common-tools.git@v0.3.0"
-uv add "common-tools[sqlserver] @ git+ssh://git@github.com/Ming-Yi/common-tools.git@v0.3.0"
-uv add "common-tools[redis] @ git+ssh://git@github.com/Ming-Yi/common-tools.git@v0.3.0"
-uv add "common-tools[logging] @ git+ssh://git@github.com/Ming-Yi/common-tools.git@v0.3.0"
-uv add "common-tools[all] @ git+ssh://git@github.com/Ming-Yi/common-tools.git@v0.3.0"
+uv add "common-tools[postgres] @ git+ssh://git@github.com/Ming-Yi/common-tools.git@v0.3.1"
+uv add "common-tools[sqlserver] @ git+ssh://git@github.com/Ming-Yi/common-tools.git@v0.3.1"
+uv add "common-tools[redis] @ git+ssh://git@github.com/Ming-Yi/common-tools.git@v0.3.1"
+uv add "common-tools[logging] @ git+ssh://git@github.com/Ming-Yi/common-tools.git@v0.3.1"
+uv add "common-tools[all] @ git+ssh://git@github.com/Ming-Yi/common-tools.git@v0.3.1"
 ```
 
 ## Application settings
